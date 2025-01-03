@@ -8,7 +8,7 @@ from scipy.signal import peak_widths
 
 class data_analysis:
     """
-
+    Description de la classe...
     """
 
     def __init__(self, spectra_path='', element_name='', unit_vector=False, level=1e-4, fwhm=1 / np.e ** 2, res=1e-1,
