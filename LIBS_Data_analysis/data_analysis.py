@@ -13,6 +13,15 @@ class data_analysis:
 
     def __init__(self, spectra_path='', element_name='', unit_vector=False, level=1e-4, fwhm=1 / np.e ** 2, res=1e-1,
                  calibration_path=''):
+        """
+        spectra_path:
+        element_name:
+        unit_vector:
+        level:
+        fwhm:
+        res:
+        calibration_path:
+        """
 
         data = pd.read_csv(spectra_path)
         key_1 = data.keys()[0]
@@ -21,10 +30,10 @@ class data_analysis:
         intensities = np.array(data[key_2])
         self.intensities = intensities / np.max(intensities)
         peaks = find_peaks(self.intensities, height=level)
-        self.peaks_wavelgth = self.waves[np.array(peaks[0], dtype=int)]
-        self.peaks_values = peaks[1]['peak_heights']
+        self.peaks_wavelgth = self.waves[np.array(peaks[0], dtype=int)] # lambda_p
+        self.peaks_values = peaks[1]['peak_heights'] # Ap
         results_half = peak_widths(self.intensities, peaks[0], rel_height=fwhm)
-        self.peaks_widths = results_half[0]
+        self.peaks_widths = results_half[0] # sigma
 
         self.element_name = element_name
         self.calib_dir = calibration_path
@@ -133,7 +142,8 @@ class data_analysis:
             waves = self.peaks_wavelgth
             weight = self.importance() * self.selectivity()
             # weights = weights / np.sqrt(np.sum(weights**2))
-            m = np.zeros((waves.size, calib.columns.size))
+            m = np.zeros((waves.size, calib.columns.size))  # m a le même nombre de ligne que les longueurs d'ondes qui
+            # nous interessent et le même nombre de colonne que le nombre d'éléments chimiques dans la base
             ind = 0
             for element in calib.columns:
                 x_cal = np.array(calib.loc['Peaks', element].strip('()').split(','), dtype=float)
@@ -149,7 +159,7 @@ class data_analysis:
                 # projection[element] = sum # / np.sum(weights ** 2)
                 ind = ind + 1
 
-            centered_m = m - np.mean(m, axis=0)
+            # centered_m = m - np.mean(m, axis=0)
             u, s, vh = np.linalg.svd(m, full_matrices=False)
             x_u = np.dot(weight, u)
             s_s = np.where(abs(s) > 1e-6, s, 0)
@@ -175,17 +185,14 @@ if __name__ == '__main__':
     dir_for_calib = './Nist_datas/'
 
     # ### Add New unit vector LIBS Data to the calibration file ####
-    case = 0
-    calibration_file = './LIBS_calibration_files/'
+    # case = 0
+    # calibration_file = './LIBS_calibration_files/'
 
     # ## For new LIBS data measurement
-    # case = 1
-    raw_data = 'Nist_datas/Alliages/Bronze_Cu-94_Sn-4_Pb-2.txt'
-    # calibration_file = 'LIBS_calibration_files/LIBS_Calibration_Oct-19-2023.csv'
+    case = 1
+    raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectras/Mg_NIST.txt'
+    calibration_file = './LIBS_Data_analysis/Calibration_files/LIBS_Calibration_Oct-19-2023.csv'
 
-    today = date.today().strftime("%b-%d-%Y")
-    file_path = os_path.join(calibration_file, 'Hardware_Calibration_' + today + '.csv')
-    angle = 10.0
     # Default parameters for peak identification
     detect_level = 1e-1
     width_level = 1 / (np.e ** 2)
