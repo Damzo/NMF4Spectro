@@ -73,7 +73,6 @@ def load_dataset(dataset):
         matGnd = imgData['Y']
         y = matGnd.ravel()
     else:
-        #print(dataset)
         print(">>The dataset is not supported, please change the name of your dataset.")
 
 
