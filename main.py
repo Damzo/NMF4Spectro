@@ -14,12 +14,14 @@ from Models.NMF import NMF
 from Models.OGNMF import OGNMF
 from Models.RSCNMF import RSCNMF
 from Models.dnsNMF import dnsNMF
+from LIBS_Data_analysis import data_analysis
 
 import scipy.io
 
 from Models.dsNMF import dsnmf
 from Models.nsNMF import nsNMF
 from Utils.utils import print_static
+import numpy as np
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(
@@ -29,17 +31,17 @@ def parse_args(args=None):
     # python main.py --model TriPNMF --dataset jaffe
     parser.add_argument('--cuda', default=True, action='store_true', help='use GPU')
     parser.add_argument('--dataset', type=str, default='orl', choices=["yale_a", "yale_b", "umist", "warpar10p", "orl", "jaffe"])
-    parser.add_argument('--model', type=str, default="RSCNMF") #choices=["sDOGNMF", "kDOGNMF", "dnsNMF", "dsnmf", "ERWNMF", "RSCNMF", "OGNMF", "GRSNMF", "GNMF", "NMF", "nsNMF", "DGRSNMF"])
+    parser.add_argument('--model', type=str, default="PNMF") #choices=["sDOGNMF", "kDOGNMF", "dnsNMF", "dsnmf", "ERWNMF", "RSCNMF", "OGNMF", "GRSNMF", "GNMF", "NMF", "nsNMF", "DGRSNMF"])
     parser.add_argument('--layer', type=int, default=2, help='The number of layers')
     ## Comment/Uncomment for UPC runs
-    #parser.add_argument('--k1', type=list, default=[80], help='The size of the first layer')
-    #parser.add_argument('--k2', type=list, default=[10, 20], help='The size of the second layer') #[10, 20, 30, 40, 50, 60, 70]
-    #parser.add_argument('--al', type=list, default=[1e-03], help='Alpha range') #[1e-03, 1e-02, 1e-01, 1e01]
-    #parser.add_argument('--be', type=list, default=[0.1], help='Beta range') #[1e-02, 1e-01, 1]
-    #parser.add_argument('--pos_al', type=list, default=[1e-8], help='Pos alpha range') #[1e03, 1e04, 1e05, 1e06]
-    #parser.add_argument('--pos_be', type=list, default=[1e04], help='Pos beta range') #[10, 100, 1000]
-    #parser.add_argument('--lda', type=list, default=[1, 10] , help='Lambda range') #[1, 10, 100]
-    #parser.add_argument('--knn', type=list, default=[2, 20], help='k_knn_list') #[3, 5, 6, 11, 21]
+    parser.add_argument('--k1', type=list, default=[80], help='The size of the first layer')
+    parser.add_argument('--k2', type=list, default=[10, 20], help='The size of the second layer') #[10, 20, 30, 40, 50, 60, 70]
+    parser.add_argument('--al', type=list, default=[1e-03], help='Alpha range') #[1e-03, 1e-02, 1e-01, 1e01]
+    parser.add_argument('--be', type=list, default=[0.1], help='Beta range') #[1e-02, 1e-01, 1]
+    parser.add_argument('--pos_al', type=list, default=[1e-8], help='Pos alpha range') #[1e03, 1e04, 1e05, 1e06]
+    parser.add_argument('--pos_be', type=list, default=[1e04], help='Pos beta range') #[10, 100, 1000]
+    parser.add_argument('--lda', type=list, default=[1, 10] , help='Lambda range') #[1, 10, 100]
+    parser.add_argument('--knn', type=list, default=[16], help='k_knn_list') #[3, 5, 6, 11, 21]
     ## ___________________________
     ## Leave uncommented
     parser.add_argument('--iter', type=int, default=100, help='Maximum iteration')
@@ -49,24 +51,44 @@ def parse_args(args=None):
     parser.add_argument('--eps2', type=float, default=1e-10, help='Epsilon 2')
     parser.add_argument('--att', type=float, default=-1, help='Attention')
     #  Comment/Uncomment for HPC runs
-    parser.add_argument('--k1', type=list, default=[80, 100, 120, 200], help='The size of the first layer')
-    parser.add_argument('--k2', type=list, default=[10, 20, 30, 40, 50, 60, 70], help='The size of the second layer')
-    parser.add_argument('--al', type=list, default=[1e-03, 1e-02, 1e-01, 1e01], help='Alpha range')
-    parser.add_argument('--be', type=list, default=[1e-02, 1e-01, 1], help='Beta range') #
-    parser.add_argument('--pos_al', type=list, default=[1e-8, 1e-6, 1e-04, 1e-02, 1e02, 1e04, 1e06, 1e08, 1e10], help='Pos alpha range') #[1e03, 1e04, 1e05, 1e06]
-    parser.add_argument('--pos_be', type=list, default=[1e-8, 1e-6, 1e-04, 1e-02, 1e02, 1e04, 1e06, 1e08, 1e10], help='Pos beta range') #[10, 100, 1000]
-    parser.add_argument('--lda', type=list, default=[1, 10, 100] , help='Lambda range') #[1, 10, 100]
-    parser.add_argument('--knn', type=list, default=[2, 5, 10, 20], help='k_knn_list') #[3, 5, 6, 11, 21]
+    #parser.add_argument('--k1', type=list, default=[80, 100, 120, 200], help='The size of the first layer')
+    #parser.add_argument('--k2', type=list, default=[10, 20, 30, 40, 50, 60, 70], help='The size of the second layer')
+    #parser.add_argument('--al', type=list, default=[1e-03, 1e-02, 1e-01, 1e01], help='Alpha range')
+    #parser.add_argument('--be', type=list, default=[1e-02, 1e-01, 1], help='Beta range') #
+    #parser.add_argument('--pos_al', type=list, default=[1e-8, 1e-6, 1e-04, 1e-02, 1e02, 1e04, 1e06, 1e08, 1e10], help='Pos alpha range') #[1e03, 1e04, 1e05, 1e06]
+    #parser.add_argument('--pos_be', type=list, default=[1e-8, 1e-6, 1e-04, 1e-02, 1e02, 1e04, 1e06, 1e08, 1e10], help='Pos beta range') #[10, 100, 1000]
+    #parser.add_argument('--lda', type=list, default=[1, 10, 100] , help='Lambda range') #[1, 10, 100]
+    #parser.add_argument('--knn', type=list, default=[2, 5, 10, 20], help='k_knn_list') #[3, 5, 6, 11, 21]
     ## ___________________________
-
+    ## Spectro
+    parser.add_argument('--spectro', default=False, action='store_true', help='Activate the execution of Data analysis to obtain the weight matrix')
     return parser.parse_args(args)
-def load_dataset(dataset):
-
-    if dataset in ["jaffe", "yale_a", "yale_b"]:
+def load_dataset(dataset, spectro=False, n_class=9):
+    if spectro:
+        dir_for_calib = './Nist_datas/'
+        raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectras/Mg_NIST.txt'
+        calibration_file = './LIBS_Data_analysis/Calibration_files/LIBS_Calibration_Oct-19-2023.csv'
+        detect_level = 1e-1
+        width_level = 1 / (np.e ** 2)
+        spectro_res = 1e-4
+        libs=data_analysis.data_analysis(raw_data, 'Aluminium', unit_vector=False, level=detect_level, fwhm=width_level,
+                                    res=spectro_res, calibration_path=calibration_file)
+        #TODO:
+        # M is a m by n matrix when n is the number of basis elements. However, we need many data points (n)
+        # So, we have to add many example from the same basis elements.
+        # Check if it is possible to have more than one spectrum of the test element
+        y = np.array([i for i in range(n_class)])
+        matGnd = y.reshape((-1, 1))
+        matImg = libs.y_cal.T.astype('float32') #M
+        imgData = {
+            'X': matImg,
+            'Y': matGnd
+        }
+    elif dataset in ["jaffe", "yale_a", "yale_b"]:
         imgData = scipy.io.loadmat('./Image_Data/' + dataset +'.mat')
-        matImg = imgData['fea'].astype('float32')
-        matGnd = imgData['gnd']
-        y = matGnd.ravel()
+        matImg = imgData['fea'].astype('float32') # Matrix
+        matGnd = imgData['gnd'] # Class as a raw-matrix
+        y = matGnd.ravel() # Class as a vector
     elif dataset in ["orl", "warpar10p", "umist"]:
         imgData = scipy.io.loadmat('./Image_Data/orl.mat')
         matImg = imgData['X'].astype('float32')
@@ -154,6 +176,7 @@ if __name__ == '__main__':
     eps_1 = args.eps1
     eps_2 = args.eps2
     att = args.att
+    spectro = args.spectro
 
     print(f'The attention value to the reconstruction errors is {att}\n {"<<<>>>"*20 }')
 
@@ -169,7 +192,9 @@ if __name__ == '__main__':
             sys.stdout = open(path, 'w')
 
         # Load dataset
-        imgData, matImg, matGnd, y = load_dataset(dataset)
+        imgData, matImg, matGnd, y = load_dataset(dataset, spectro=spectro, n_class=k_knn_list[0])
+        #print(matImg.shape, y.shape)
+        #exit()
         # Print static params
         print_static(model, dataset, max_iter, eps_1, eps_2)
 
