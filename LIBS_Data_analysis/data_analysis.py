@@ -194,7 +194,7 @@ if __name__ == '__main__':
     calibration_file = './LIBS_Data_analysis/Calibration_files/LIBS_Calibration_Oct-19-2023.csv'
 
     # Default parameters for peak identification
-    detect_level = 1e-1
+    detect_level = 1e-3
     width_level = 1 / (np.e ** 2)
     spectro_res = 1e-4
 
