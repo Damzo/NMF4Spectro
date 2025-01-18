@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
     # ## For new LIBS data measurement
     case = 1
-    raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectras/Mg_NIST.txt'
+    raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectra/Mg_NIST.txt'
     calibration_file = './LIBS_Data_analysis/Calibration_files/LIBS_Calibration_Oct-19-2023.csv'
 
     # Default parameters for peak identification

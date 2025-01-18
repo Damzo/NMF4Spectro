@@ -66,7 +66,7 @@ def parse_args(args=None):
 def load_dataset(dataset, spectro=False, n_class=9):
     if spectro:
         dir_for_calib = './Nist_datas/'
-        raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectras/Mg_NIST.txt'
+        raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectra/Mg_NIST.txt'
         calibration_file = './LIBS_Data_analysis/Calibration_files/LIBS_Calibration_Oct-19-2023.csv'
         detect_level = 1e-1
         width_level = 1 / (np.e ** 2)
