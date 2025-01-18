@@ -66,14 +66,14 @@ def parse_args(args=None):
 def load_dataset(dataset, spectro=False, n_class=9):
     if spectro:
         dir_for_calib = './Nist_datas/'
-        raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectras/Mg_NIST.txt'
+        raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectras/Mn_NIST.txt'
         calibration_file = './LIBS_Data_analysis/Calibration_files/LIBS_Calibration_Oct-19-2023.csv'
         detect_level = 1e-1
         width_level = 1 / (np.e ** 2)
         spectro_res = 1e-4
         libs=data_analysis.data_analysis(raw_data, 'Aluminium', unit_vector=False, level=detect_level, fwhm=width_level,
                                     res=spectro_res, calibration_path=calibration_file)
-        #TODO:
+        # TODO:
         # M is a m by n matrix when n is the number of basis elements. However, we need many data points (n)
         # So, we have to add many example from the same basis elements.
         # Check if it is possible to have more than one spectrum of the test element

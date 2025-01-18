@@ -168,6 +168,8 @@ def run_model(model, dataset, matImg, y, k_knn_list, k_list, beta_list, maxiter,
                     davis_score = calculate_davies_bouldin_score(Clustermatrix, pred) ## add
 
                     # dunn's index
+                    print(f" Clustermatrix {Clustermatrix.shape} \n y {y.shape}")
+                    #exit()
                     dunn_score = calculate_dunn_index(Clustermatrix, y) ## add
 
                     lst_acc.append(round(acc, 4))
