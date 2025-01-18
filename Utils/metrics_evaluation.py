@@ -325,8 +325,12 @@ def calculate_davies_bouldin_score(X, labels):
     return score
 
 def calculate_dunn_index(data, target):
+    #print(f" target {target}")
+    #exit()
     pd_df = pd.DataFrame(data)
     pd_df['target'] = target
+    #print(f"pd_df \n {pd_df}\n columns {pd_df.columns}")
     CC = ClustersCharacteristics(pd_df, label_target="target")
     score = CC.IndexCore_generate_output_by_info_type('general', 'max', 'G-Max-04')
+
     return score

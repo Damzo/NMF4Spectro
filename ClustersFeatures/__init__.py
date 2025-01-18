@@ -73,8 +73,11 @@ class ClustersCharacteristics(__Score,__Data,__ScoreIndex,__Info,__ConfusionHype
         raising_errors.verify_no_object_columns_and_delete_it(pd_df_)
 
         #Imputation if NaN values are detected
+        #print(f"Initial \n {pd_df_}\n and args {args}")
         pd_df = df_processing.impute_nan_values(pd_df_,args)
+        #print(f"After df_prepro\n {pd_df_}\n and args {args}")
         pd_df,label_target = df_processing.generate_label_target_in_case_missing_it(pd_df,args)
+        #print(f"After df_prepro_generate \n {pd_df}\n and label_target {label_target}")
         self.label_target=label_target
         raising_errors.verify_not_empty_and_correct_target(pd_df, label_target)
 
