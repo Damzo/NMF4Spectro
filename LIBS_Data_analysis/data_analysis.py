@@ -30,10 +30,11 @@ class data_analysis:
         intensities = np.array(data[key_2])
         self.intensities = intensities / np.max(intensities)
         peaks = find_peaks(self.intensities, height=level)
-        self.peaks_wavelgth = self.waves[np.array(peaks[0], dtype=int)] # lambda_p
-        self.peaks_values = peaks[1]['peak_heights'] # Ap
+        self.peaks_wavelgth = self.waves[np.array(peaks[0], dtype=int)]  # lambda_p
+        self.peaks_values = peaks[1]['peak_heights']  # Ap
         results_half = peak_widths(self.intensities, peaks[0], rel_height=fwhm)
-        self.peaks_widths = results_half[0] # sigma
+        self.peaks_widths = results_half[0]  # sigma
+        self.classes = []  # liste des noms des classes(penser à enlever le underscore pour les classes qui se répètent)
 
         self.element_name = element_name
         self.calib_dir = calibration_path
@@ -51,13 +52,14 @@ class data_analysis:
             elif os_path.isdir(calibration_path):
                 todays = date.today().strftime("%b-%d-%Y")
                 self.file_path = os_path.join(calibration_path, 'LIBS_Calibration_' + todays + '.csv')
+                os.path.normpath(self.file_path)
                 print("New calibration file: ", self.file_path)
                 self.save_unit_vector(self.file_path)
             else:
                 print("Calibration directory path ERROR: please give a correct path")
 
         else:
-            self.u_vec, self.svd, self.vh_vec, self.y_cal, self.elmt, self.projection = \
+            self.u_vec, self.svd, self.vh_vec, self.y_cal, self.elmt, self.projection, self.classes = \
                 self.new_data_analysis(self.calib_dir)
             # self.projection = self.new_data_analysis(self.calib_dir)
 
@@ -142,8 +144,8 @@ class data_analysis:
             waves = self.peaks_wavelgth
             weight = self.importance() * self.selectivity()
             # weights = weights / np.sqrt(np.sum(weights**2))
-            m = np.zeros((waves.size, calib.columns.size))  # m a le même nombre de ligne que les longueurs d'ondes qui
-            # nous interessent et le même nombre de colonne que le nombre d'éléments chimiques dans la base
+            m = np.zeros((waves.size, calib.columns.size))  # m a le même nombre de lignes que les longueurs d'ondes qui
+            # nous interessent et le même nombre de colonnes que le nombre d'éléments chimiques dans la base
             ind = 0
             for element in calib.columns:
                 x_cal = np.array(calib.loc['Peaks', element].strip('()').split(','), dtype=float)
@@ -167,13 +169,21 @@ class data_analysis:
             # s_t = np.diag(np.where(s == 0, s, 1 / s))
             x_us = np.dot(x_u, s_t)
             proj = np.dot(x_us, vh)
+            proj = proj / np.sum(abs(proj))
 
+            # class_list = [e.split("_")[0] for e in calib.columns]
+            # class_list = list(set(class_list))
             ind = 0
             for element in calib.columns:
-                projection[element] = proj[ind] / np.sum(abs(proj))
+                prefix = element.split("_")[0]
+                if not (prefix in projection.keys()):
+                    projection[prefix] = proj[ind]
+                else:
+                    projection[prefix] = projection[prefix] + proj[ind]
+
                 ind = ind + 1
 
-        return u, s, vh, m, weight, projection
+        return u, s, vh, m, weight, projection, list(calib.columns)
         # return projection
 
 
@@ -182,16 +192,16 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     # O for LIBS_calibration, 1 for LIBS_measurement
-    dir_for_calib = './Nist_datas/'
+    dir_for_calib = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectra/Mg_NIST/'
 
     # ### Add New unit vector LIBS Data to the calibration file ####
     # case = 0
-    # calibration_file = './LIBS_calibration_files/'
+    # calibration_file = './LIBS_Data_analysis/Calibration_files/LIBS_Calibration_Jan-18-2025.csv'
 
     # ## For new LIBS data measurement
     case = 1
-    raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectra/Mg_NIST.txt'
-    calibration_file = './LIBS_Data_analysis/Calibration_files/LIBS_Calibration_Oct-19-2023.csv'
+    raw_data = './LIBS_Data_analysis/NIST_data/Alloys_spectra/AlSi_80-20.txt'
+    calibration_file = './LIBS_Data_analysis/Calibration_files/LIBS_Calibration_Jan-18-2025.csv'
 
     # Default parameters for peak identification
     detect_level = 1e-3
@@ -234,9 +244,10 @@ if __name__ == '__main__':
         # ############## Add new calibration vector
         files = os.listdir(dir_for_calib)
         files = [f for f in files if os.path.isfile(dir_for_calib + '/' + f)]
-        for f in files:
-            name = f.split(sep='_')
+        for idx, f in enumerate(files):
+
+            name = f.split(sep='_')[0] + '_' + str(idx)
             d = dir_for_calib + f
-            libs = data_analysis(d, name[0], unit_vector=True, level=detect_level, fwhm=width_level, res=spectro_res,
+            libs = data_analysis(d, name, unit_vector=True, level=detect_level, fwhm=width_level, res=spectro_res,
                                  calibration_path=calibration_file)
             calibration_file = libs.file_path
