@@ -33,9 +33,6 @@ def store_resl(data, model, dataset, name=''):
 
 def PNMF(XX_T, beta,m, k,maxiter):
     U = np.random.rand(m,k);
-    #V = np.random.rand(k,n);
-    #D = np.random.rand(k,k);
-    #print(XXX.shape, n, m, k)
     for i in range(1,maxiter+1):   ####for i=1:maxiter
         ## Update U
         # Compute un-normalized U
@@ -168,8 +165,6 @@ def run_model(model, dataset, matImg, y, k_knn_list, k_list, beta_list, maxiter,
                     davis_score = calculate_davies_bouldin_score(Clustermatrix, pred) ## add
 
                     # dunn's index
-                    print(f" Clustermatrix {Clustermatrix.shape} \n y {y.shape}")
-                    #exit()
                     dunn_score = calculate_dunn_index(Clustermatrix, y) ## add
 
                     lst_acc.append(round(acc, 4))

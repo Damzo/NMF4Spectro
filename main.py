@@ -63,28 +63,42 @@ def parse_args(args=None):
     ## Spectro
     parser.add_argument('--spectro', default=False, action='store_true', help='Activate the execution of Data analysis to obtain the weight matrix')
     return parser.parse_args(args)
-def load_dataset(dataset, spectro=False, n_class=9):
+def load_dataset(dataset, spectro=False):
     if spectro:
         dir_for_calib = './Nist_datas/'
-        raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectra/Mg_NIST.txt'
-        raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectras/Mn_NIST.txt'
-        calibration_file = './LIBS_Data_analysis/Calibration_files/LIBS_Calibration_Oct-19-2023.csv'
-        detect_level = 1e-1
+        #raw_data = './LIBS_Data_analysis/NIST_data/Unit_vectors_spectra/Mg_NIST.txt'
+        raw_data = './LIBS_Data_analysis/NIST_data/Alloys_spectra/AlSi_80-20.txt'
+        calibration_file = './LIBS_Data_analysis/Calibration_files/LIBS_Calibration_Jan-18-2025.csv'
+        detect_level = 1e-3
         width_level = 1 / (np.e ** 2)
         spectro_res = 1e-4
-        libs=data_analysis.data_analysis(raw_data, 'Aluminium', unit_vector=False, level=detect_level, fwhm=width_level,
+        libs=data_analysis.data_analysis(raw_data, 'AlSi', unit_vector=False, level=detect_level, fwhm=width_level,
                                     res=spectro_res, calibration_path=calibration_file)
         # TODO:
         # M is a m by n matrix when n is the number of basis elements. However, we need many data points (n)
         # So, we have to add many example from the same basis elements.
         # Check if it is possible to have more than one spectrum of the test element
-        y = np.array([i for i in range(n_class)])
+        target = {}
+        classe = 0
+        y = -1 * np.ones(len(libs.classes))
+        for idx, elt in enumerate(libs.classes):
+            prefix = elt.split('_')[0]
+            if not(prefix in target.keys()):
+                target.update({prefix: classe})
+                y[idx] = classe
+                classe += 1
+            else:
+                y[idx] = target[prefix]
+
+
         matGnd = y.reshape((-1, 1))
         matImg = libs.y_cal.T.astype('float32') #M
         imgData = {
             'X': matImg,
             'Y': matGnd
         }
+        #print(f" y {y.shape, y}\n m {matImg.shape, np.unique(matImg)}")
+        #exit()
     elif dataset in ["jaffe", "yale_a", "yale_b"]:
         imgData = scipy.io.loadmat('./Image_Data/' + dataset +'.mat')
         matImg = imgData['fea'].astype('float32') # Matrix
@@ -193,11 +207,12 @@ if __name__ == '__main__':
             sys.stdout = open(path, 'w')
 
         # Load dataset
-        imgData, matImg, matGnd, y = load_dataset(dataset, spectro=spectro, n_class=k_knn_list[0])
+        imgData, matImg, matGnd, y = load_dataset(dataset, spectro=spectro)
         #print(matImg.shape, y.shape)
         #exit()
         # Print static params
         print_static(model, dataset, max_iter, eps_1, eps_2)
+        print('Spectro : ', spectro)
 
         # Run model
         s=run_model(model, dataset, alpha_range, beta_range, matImg, matGnd, k1_list, k2_list, maxiter_kmeans, l, max_iter, eps_1,
